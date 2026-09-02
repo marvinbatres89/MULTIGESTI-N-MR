@@ -1,0 +1,10 @@
+{
+  "name":"MULTIGESTIÓN MR",
+  "short_name":"MultiGestión MR",
+  "description":"Sistema Multinegocio de Gestión Financiera y Operativa",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#f4f7f9",
+  "theme_color":"#0b2440",
+  "icons":[{"src":"assets/logo-multigestion-mr.png","sizes":"1024x1024","type":"image/png","purpose":"any maskable"}]
+}
