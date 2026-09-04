@@ -2,7 +2,7 @@
   'use strict';
 
   const SUPABASE_URL = 'https://nbnrktcvpuzlqdjqziky.supabase.co';
-  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ry-zp0PyMU1-p6hKXGz9IQ_d_mLddpCAPI';
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ry-zp0PyMU1-p6hKXGz9IQ_d_mLddpC" ;
 
   if (!window.supabase?.createClient) {
     console.error('Supabase JS no está disponible');
