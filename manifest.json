@@ -1,9 +1,0 @@
-{
-  "name": "MULTIGESTIÓN MR",
-  "short_name": "MultiGestión MR",
-  "description": "Sistema Multinegocio de Gestión Financiera y Operativa",
-  "start_url": "./index.html?v=121",
-  "display": "standalone",
-  "background_color": "#eef6f2",
-  "theme_color": "#07594f"
-}
