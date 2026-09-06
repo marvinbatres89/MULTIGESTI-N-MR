@@ -35,7 +35,14 @@
   function canAdminBusiness(id=activeBusinessId){return !cloudActive()||cloud().canAdminBusiness(id)}
   function canAddToBusiness(id=activeBusinessId){return !cloudActive()||cloud().canAddMovement(id)}
   function canEditRecord(m){return !cloudActive()||cloud().canEditMovement(m)}
-
+window.MG_DEBUG_USER = () => {
+  const c = cloud();
+  console.log('MULTIGESTIÓN MR - USUARIO ACTUAL:', c?.state?.user);
+  alert(
+    'USER ID:\n' + (c?.state?.user?.id || 'NO DISPONIBLE') +
+    '\n\nEMAIL:\n' + (c?.state?.user?.email || 'NO DISPONIBLE')
+  );
+};
   async function refresh(){
     smartMemory=await getAll('smartMemory');
     if(cloudActive()){
@@ -185,5 +192,5 @@
   window.addEventListener('mg-auth-changed',async()=>{activeBusinessId=null;await refresh();});
   const originalRender=render;render=function(){originalRender();if(cloudActive()&&activeBusinessId&&cloud().canAdminBusiness(activeBusinessId))renderAccessLinks();};
 
-  (async()=>{try{db=await openDB();businesses=await getAll('businesses');movements=await getAll('movements');smartMemory=await getAll('smartMemory');await migrateMemory();if(cloud()){await cloud().init();if(cloud().state?.recoveryMode)openRecoveryDialog();}await refresh();registerFreshWorker();}catch(err){console.error(err);toast(err.message||'No fue posible iniciar MULTIGESTIÓN MR');}})();
+  (async()=>{try{db=await openDB();businesses=await getAll('businesses');movements=await getAll('movements');smartMemory=await getAll('smartMemory');await migrateMemory();if(cloud()){await cloud().init();window.MG_DEBUG_USER();if(cloud().state?.recoveryMode)openRecoveryDialog();}await refresh();registerFreshWorker();}catch(err){console.error(err);toast(err.message||'No fue posible iniciar MULTIGESTIÓN MR');}})();
 })();
