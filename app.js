@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.3.4';
+  const APP_VERSION = '1.3.5';
   const DB_NAME = 'multigestion_mr_v1';
   const DB_VERSION = 2;
 
@@ -20,6 +20,372 @@
     style: 'currency',
     currency: 'USD'
   });
+
+  /* =========================================================
+     BLOQUEO ESTRICTO DE ACCESO
+     V1.3.5
+     ========================================================= */
+
+  const ACCESS_GATE_ID = 'mgStrictAccessGate';
+
+  function pageHasAccessToken() {
+    try {
+      return new URL(
+        location.href
+      ).searchParams.has('access');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function accessGateElement() {
+    return document.getElementById(
+      ACCESS_GATE_ID
+    );
+  }
+
+  function createAccessGate() {
+    let gate =
+      accessGateElement();
+
+    if (gate) {
+      return gate;
+    }
+
+    gate =
+      document.createElement(
+        'div'
+      );
+
+    gate.id =
+      ACCESS_GATE_ID;
+
+    gate.setAttribute(
+      'role',
+      'alert'
+    );
+
+    gate.setAttribute(
+      'aria-live',
+      'assertive'
+    );
+
+    gate.style.position =
+      'fixed';
+
+    gate.style.inset =
+      '0';
+
+    gate.style.zIndex =
+      '2147483647';
+
+    gate.style.display =
+      'flex';
+
+    gate.style.alignItems =
+      'center';
+
+    gate.style.justifyContent =
+      'center';
+
+    gate.style.padding =
+      '24px';
+
+    gate.style.background =
+      'linear-gradient(145deg,#071b2d 0%,#0c3657 55%,#0d5547 100%)';
+
+    gate.style.overflow =
+      'auto';
+
+    gate.innerHTML = `
+      <div
+        style="
+          width:min(100%,520px);
+          padding:34px 24px;
+          box-sizing:border-box;
+          border-radius:24px;
+          background:rgba(255,255,255,.97);
+          box-shadow:0 26px 80px rgba(0,0,0,.35);
+          text-align:center;
+          font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        "
+      >
+        <div
+          data-gate-icon
+          style="
+            width:82px;
+            height:82px;
+            margin:0 auto 20px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:50%;
+            background:#eaf5f1;
+            font-size:38px;
+          "
+        >
+          🔐
+        </div>
+
+        <div
+          style="
+            margin-bottom:8px;
+            font-size:13px;
+            font-weight:800;
+            letter-spacing:.12em;
+            color:#14875b;
+          "
+        >
+          MULTIGESTIÓN MR
+        </div>
+
+        <h1
+          data-gate-title
+          style="
+            margin:0 0 14px;
+            color:#123b63;
+            font-size:27px;
+            line-height:1.15;
+          "
+        >
+          VALIDANDO ACCESO
+        </h1>
+
+        <p
+          data-gate-message
+          style="
+            margin:0;
+            color:#52606d;
+            font-size:16px;
+            line-height:1.55;
+          "
+        >
+          Estamos verificando este enlace privado.
+        </p>
+
+        <div
+          data-gate-loader
+          style="
+            width:42px;
+            height:42px;
+            margin:25px auto 0;
+            border:4px solid #d7e3eb;
+            border-top-color:#14875b;
+            border-radius:50%;
+            animation:mgGateSpin .8s linear infinite;
+          "
+        ></div>
+
+        <div
+          data-gate-footer
+          style="
+            margin-top:22px;
+            color:#7a8793;
+            font-size:13px;
+          "
+        >
+          Acceso privado protegido
+        </div>
+      </div>
+    `;
+
+    const style =
+      document.createElement(
+        'style'
+      );
+
+    style.setAttribute(
+      'data-mg-gate-style',
+      '1'
+    );
+
+    style.textContent = `
+      @keyframes mgGateSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      body.mg-access-locked {
+        overflow: hidden !important;
+      }
+    `;
+
+    document.head
+      ?.appendChild(style);
+
+    document.body
+      ?.appendChild(gate);
+
+    document.body
+      ?.classList.add(
+        'mg-access-locked'
+      );
+
+    return gate;
+  }
+
+  function showAccessValidating() {
+    const gate =
+      createAccessGate();
+
+    if (!gate) return;
+
+    const icon =
+      gate.querySelector(
+        '[data-gate-icon]'
+      );
+
+    const title =
+      gate.querySelector(
+        '[data-gate-title]'
+      );
+
+    const message =
+      gate.querySelector(
+        '[data-gate-message]'
+      );
+
+    const loader =
+      gate.querySelector(
+        '[data-gate-loader]'
+      );
+
+    if (icon) {
+      icon.textContent =
+        '🔐';
+
+      icon.style.background =
+        '#eaf5f1';
+    }
+
+    if (title) {
+      title.textContent =
+        'VALIDANDO ACCESO';
+
+      title.style.color =
+        '#123b63';
+    }
+
+    if (message) {
+      message.textContent =
+        'Estamos verificando este enlace privado.';
+    }
+
+    if (loader) {
+      loader.style.display =
+        'block';
+    }
+
+    gate.style.display =
+      'flex';
+
+    document.body
+      ?.classList.add(
+        'mg-access-locked'
+      );
+  }
+
+  function showAccessDenied(
+    message
+  ) {
+    const gate =
+      createAccessGate();
+
+    if (!gate) return;
+
+    const icon =
+      gate.querySelector(
+        '[data-gate-icon]'
+      );
+
+    const title =
+      gate.querySelector(
+        '[data-gate-title]'
+      );
+
+    const text =
+      gate.querySelector(
+        '[data-gate-message]'
+      );
+
+    const loader =
+      gate.querySelector(
+        '[data-gate-loader]'
+      );
+
+    const footer =
+      gate.querySelector(
+        '[data-gate-footer]'
+      );
+
+    if (icon) {
+      icon.textContent =
+        '⛔';
+
+      icon.style.background =
+        '#fdecec';
+    }
+
+    if (title) {
+      title.textContent =
+        'ACCESO NO AUTORIZADO';
+
+      title.style.color =
+        '#b42318';
+    }
+
+    if (text) {
+      text.textContent =
+        message ||
+        'Este enlace ya fue utilizado o ya no es válido. Solicite un nuevo acceso al administrador.';
+    }
+
+    if (loader) {
+      loader.style.display =
+        'none';
+    }
+
+    if (footer) {
+      footer.textContent =
+        'No tiene autorización para ingresar a esta plataforma.';
+    }
+
+    gate.style.display =
+      'flex';
+
+    document.body
+      ?.classList.add(
+        'mg-access-locked'
+      );
+  }
+
+  function removeAccessGate() {
+    const gate =
+      accessGateElement();
+
+    if (gate) {
+      gate.remove();
+    }
+
+    document.body
+      ?.classList.remove(
+        'mg-access-locked'
+      );
+  }
+
+  /*
+    Si la URL trae ?access=,
+    tapamos inmediatamente toda
+    la interfaz ANTES de validar.
+  */
+  if (pageHasAccessToken()) {
+    showAccessValidating();
+  }
+
+  /* =========================================================
+     INICIO GENERAL
+     ========================================================= */
 
   const today = new Date();
 
@@ -92,8 +458,11 @@
         }
       };
 
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      req.onsuccess = () =>
+        resolve(req.result);
+
+      req.onerror = () =>
+        reject(req.error);
     });
   }
 
@@ -136,7 +505,9 @@
           .delete(id);
 
       r.onsuccess = () => res();
-      r.onerror = () => rej(r.error);
+
+      r.onerror = () =>
+        rej(r.error);
     });
   }
 
@@ -165,11 +536,16 @@
     t.textContent = msg;
     t.classList.add('show');
 
-    clearTimeout(toast.timer);
+    clearTimeout(
+      toast.timer
+    );
 
     toast.timer =
       setTimeout(
-        () => t.classList.remove('show'),
+        () =>
+          t.classList.remove(
+            'show'
+          ),
         2500
       );
   }
@@ -192,7 +568,8 @@
     s = String(s || '');
 
     return s
-      ? s.charAt(0).toUpperCase() + s.slice(1)
+      ? s.charAt(0).toUpperCase() +
+          s.slice(1)
       : '';
   }
 
@@ -226,7 +603,10 @@
         .filter(isIncome)
         .reduce(
           (s, m) =>
-            s + Number(m.total || 0),
+            s +
+            Number(
+              m.total || 0
+            ),
           0
         );
 
@@ -235,14 +615,19 @@
         .filter(isExpense)
         .reduce(
           (s, m) =>
-            s + Number(m.total || 0),
+            s +
+            Number(
+              m.total || 0
+            ),
           0
         );
 
     return {
       income,
       expense,
-      profit: income - expense
+      profit:
+        income -
+        expense
     };
   }
 
@@ -251,7 +636,9 @@
   ) {
     return id
       ? movements.filter(
-          m => m.businessId === id
+          m =>
+            m.businessId ===
+            id
         )
       : [];
   }
@@ -264,14 +651,34 @@
     () => window.MGCloud;
 
   const cloudActive =
-    () => !!cloud()?.state?.user;
+    () =>
+      !!cloud()?.state?.user;
+
+  function cloudAccessDenied() {
+    try {
+      return !!cloud()
+        ?.isAccessDenied?.();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function cloudAccessPending() {
+    try {
+      return !!cloud()
+        ?.isAccessPending?.();
+    } catch (_) {
+      return false;
+    }
+  }
 
   function canAdminBusiness(
     id = activeBusinessId
   ) {
     return (
       !cloudActive() ||
-      cloud().canAdminBusiness(id)
+      cloud()
+        .canAdminBusiness(id)
     );
   }
 
@@ -280,25 +687,56 @@
   ) {
     return (
       !cloudActive() ||
-      cloud().canAddMovement(id)
+      cloud()
+        .canAddMovement(id)
     );
   }
 
   function canEditRecord(m) {
     return (
       !cloudActive() ||
-      cloud().canEditMovement(m)
+      cloud()
+        .canEditMovement(m)
     );
   }
 
   async function refresh() {
+    /*
+      V1.3.5:
+      Un enlace denegado jamás
+      debe caer al modo local.
+    */
+    if (
+      cloudAccessDenied()
+    ) {
+      const gate =
+        cloud()
+          ?.getAccessGate?.();
+
+      showAccessDenied(
+        gate?.message
+      );
+
+      return;
+    }
+
+    if (
+      cloudAccessPending()
+    ) {
+      showAccessValidating();
+      return;
+    }
+
     smartMemory =
-      await getAll('smartMemory');
+      await getAll(
+        'smartMemory'
+      );
 
     if (cloudActive()) {
       try {
         const remote =
-          await cloud().fetchData();
+          await cloud()
+            .fetchData();
 
         businesses =
           remote.businesses;
@@ -309,6 +747,26 @@
       } catch (err) {
         console.error(err);
 
+        /*
+          Si la causa es un acceso
+          denegado, NO mostrar datos
+          locales ni la aplicación.
+        */
+        if (
+          cloudAccessDenied()
+        ) {
+          const gate =
+            cloud()
+              ?.getAccessGate?.();
+
+          showAccessDenied(
+            gate?.message ||
+            err.message
+          );
+
+          return;
+        }
+
         toast(
           `Nube: ${
             err.message ||
@@ -317,17 +775,26 @@
         );
 
         businesses =
-          await getAll('businesses');
+          await getAll(
+            'businesses'
+          );
 
         movements =
-          await getAll('movements');
+          await getAll(
+            'movements'
+          );
       }
+
     } else {
       businesses =
-        await getAll('businesses');
+        await getAll(
+          'businesses'
+        );
 
       movements =
-        await getAll('movements');
+        await getAll(
+          'movements'
+        );
     }
 
     businesses.sort(
@@ -339,18 +806,36 @@
     if (
       activeBusinessId &&
       !businesses.some(
-        b => b.id === activeBusinessId
+        b =>
+          b.id ===
+          activeBusinessId
       )
     ) {
-      activeBusinessId = null;
+      activeBusinessId =
+        null;
     }
 
     render();
   }
 
   function renderCloudUI(active) {
+    if (
+      cloudAccessDenied()
+    ) {
+      const gate =
+        cloud()
+          ?.getAccessGate?.();
+
+      showAccessDenied(
+        gate?.message
+      );
+
+      return;
+    }
+
     const c = cloud();
-    const online = cloudActive();
+    const online =
+      cloudActive();
 
     if ($('cloudDot')) {
       $('cloudDot')
@@ -372,10 +857,12 @@
       $('cloudUserLabel').textContent =
         online
           ? (
-              c.state.user?.is_anonymous
+              c.state.user
+                ?.is_anonymous
                 ? 'Colaborador autorizado'
                 : (
-                    c.state.user?.email ||
+                    c.state.user
+                      ?.email ||
                     'Administrador conectado'
                   )
             )
@@ -396,7 +883,8 @@
       $('sharedAccessBanner').hidden =
         !(
           online &&
-          c.state.user?.is_anonymous
+          c.state.user
+            ?.is_anonymous
         );
     }
 
@@ -411,7 +899,9 @@
         !(
           online &&
           active &&
-          c.canAdminBusiness(active.id)
+          c.canAdminBusiness(
+            active.id
+          )
         );
     }
 
@@ -419,7 +909,8 @@
       $('migrateLocalBtn').hidden =
         !(
           online &&
-          !c.state.user?.is_anonymous
+          !c.state.user
+            ?.is_anonymous
         ) ||
         localStorage.getItem(
           'mg_cloud_migrated_v13'
@@ -432,18 +923,39 @@
      ========================================================= */
 
   function render() {
+    if (
+      cloudAccessDenied()
+    ) {
+      const gate =
+        cloud()
+          ?.getAccessGate?.();
+
+      showAccessDenied(
+        gate?.message
+      );
+
+      return;
+    }
+
     const active =
       businesses.find(
-        b => b.id === activeBusinessId
+        b =>
+          b.id ===
+          activeBusinessId
       );
 
     const list =
       active
-        ? businessMovements(active.id)
+        ? businessMovements(
+            active.id
+          )
         : [];
 
-    const c = calc(list);
-    const general = calc(movements);
+    const c =
+      calc(list);
+
+    const general =
+      calc(movements);
 
     renderCloudUI(active);
 
@@ -458,13 +970,19 @@
         : 'Seleccione un negocio';
 
     $('mIncome').textContent =
-      money.format(c.income);
+      money.format(
+        c.income
+      );
 
     $('mExpense').textContent =
-      money.format(c.expense);
+      money.format(
+        c.expense
+      );
 
     $('mProfit').textContent =
-      money.format(c.profit);
+      money.format(
+        c.profit
+      );
 
     $('mMovements').textContent =
       list.length;
@@ -482,35 +1000,48 @@
       businesses.length;
 
     $('gIncome').textContent =
-      money.format(general.income);
+      money.format(
+        general.income
+      );
 
     $('gExpense').textContent =
-      money.format(general.expense);
+      money.format(
+        general.expense
+      );
 
     $('gProfit').textContent =
-      money.format(general.profit);
+      money.format(
+        general.profit
+      );
 
-    $('businessList').innerHTML = '';
+    $('businessList').innerHTML =
+      '';
 
     $('emptyBusinesses').hidden =
       businesses.length > 0;
 
     businesses.forEach(b => {
       const own =
-        businessMovements(b.id);
+        businessMovements(
+          b.id
+        );
 
       const ownCalc =
         calc(own);
 
       const btn =
-        document.createElement('button');
+        document.createElement(
+          'button'
+        );
 
-      btn.type = 'button';
+      btn.type =
+        'button';
 
       btn.className =
         'business-item' +
         (
-          b.id === activeBusinessId
+          b.id ===
+            activeBusinessId
             ? ' active'
             : ''
         );
@@ -539,7 +1070,9 @@
             return;
           }
 
-          cancelEditing(false);
+          cancelEditing(
+            false
+          );
 
           activeBusinessId =
             b.id;
@@ -560,11 +1093,15 @@
 
     $('deleteBusinessBtn').disabled =
       !enabled ||
-      !canAdminBusiness(active?.id);
+      !canAdminBusiness(
+        active?.id
+      );
 
     $('saveMovementBtn').disabled =
       !enabled ||
-      !canAddToBusiness(active?.id);
+      !canAddToBusiness(
+        active?.id
+      );
 
     $('activeBusinessName').textContent =
       active
@@ -575,27 +1112,38 @@
       active
         ? `${active.type}${
             active.description
-              ? ' · ' + active.description
+              ? ' · ' +
+                active.description
               : ''
           }`
         : 'Cree o seleccione un negocio para comenzar.';
 
     $('bIncome').textContent =
-      money.format(c.income);
+      money.format(
+        c.income
+      );
 
     $('bExpense').textContent =
-      money.format(c.expense);
+      money.format(
+        c.expense
+      );
 
     $('bProfit').textContent =
-      money.format(c.profit);
+      money.format(
+        c.profit
+      );
 
     $('bMovements').textContent =
       list.length;
 
-    renderMovements(list);
+    renderMovements(
+      list
+    );
   }
 
-  function renderMovements(baseList) {
+  function renderMovements(
+    baseList
+  ) {
     const filter =
       $('filterType').value;
 
@@ -610,8 +1158,10 @@
         .filter(
           m =>
             (
-              filter === 'todos' ||
-              m.type === filter
+              filter ===
+                'todos' ||
+              m.type ===
+                filter
             ) &&
             (
               !q ||
@@ -638,17 +1188,21 @@
             (a.createdAt || 0)
         );
 
-    $('movementRows').innerHTML = '';
+    $('movementRows').innerHTML =
+      '';
 
     $('emptyMovements').hidden =
       list.length > 0;
 
     list.forEach(m => {
       const tr =
-        document.createElement('tr');
+        document.createElement(
+          'tr'
+        );
 
       if (
-        m.id === editingMovementId
+        m.id ===
+        editingMovementId
       ) {
         tr.classList.add(
           'editing-row'
@@ -660,9 +1214,10 @@
 
       const deletable =
         !cloudActive() ||
-        cloud().canDeleteMovement(
-          m.businessId
-        );
+        cloud()
+          .canDeleteMovement(
+            m.businessId
+          );
 
       tr.innerHTML = `
         <td>${escapeHtml(m.date)}</td>
@@ -728,7 +1283,10 @@
         )
         ?.addEventListener(
           'click',
-          () => startEditing(m.id)
+          () =>
+            startEditing(
+              m.id
+            )
         );
 
       tr
@@ -738,7 +1296,9 @@
         ?.addEventListener(
           'click',
           () =>
-            saveEditedMovement(m.id)
+            saveEditedMovement(
+              m.id
+            )
         );
 
       tr
@@ -748,7 +1308,9 @@
         ?.addEventListener(
           'click',
           () =>
-            deleteMovement(m.id)
+            deleteMovement(
+              m.id
+            )
         );
 
       $('movementRows')
@@ -778,7 +1340,8 @@
       );
 
     $('total').value =
-      (q * p).toFixed(2);
+      (q * p)
+        .toFixed(2);
   }
 
   function movementFromForm(
@@ -854,10 +1417,12 @@
         ),
 
       createdBy:
-        existing?.createdBy,
+        existing
+          ?.createdBy,
 
       createdAt:
-        existing?.createdAt ||
+        existing
+          ?.createdAt ||
         Date.now(),
 
       updatedAt:
@@ -877,7 +1442,9 @@
       };
     }
 
-    if (quantity <= 0) {
+    if (
+      quantity <= 0
+    ) {
       return {
         error:
           'La cantidad debe ser mayor que 0'
@@ -893,7 +1460,8 @@
     const keepDate =
       $('date').value;
 
-    $('movementForm').reset();
+    $('movementForm')
+      .reset();
 
     $('date').value =
       keepDate ||
@@ -928,7 +1496,9 @@
 
     if (!m) return;
 
-    if (!canEditRecord(m)) {
+    if (
+      !canEditRecord(m)
+    ) {
       return toast(
         'No tiene permiso para editar este registro'
       );
@@ -1034,19 +1604,34 @@
     }
   }
 
-  async function rememberMovement(m) {
+  async function rememberMovement(
+    m
+  ) {
     for (
-      const [field, value]
-      of [
-        ['category', m.category],
-        ['concept', m.concept],
-        ['party', m.party]
+      const [
+        field,
+        value
+      ] of [
+        [
+          'category',
+          m.category
+        ],
+        [
+          'concept',
+          m.concept
+        ],
+        [
+          'party',
+          m.party
+        ]
       ]
     ) {
       const clean =
         normalize(value);
 
-      if (!clean) continue;
+      if (!clean) {
+        continue;
+      }
 
       const key =
         memoryKey(clean);
@@ -1056,7 +1641,8 @@
 
       const existing =
         smartMemory.find(
-          x => x.id === id
+          x =>
+            x.id === id
         );
 
       await put(
@@ -1068,10 +1654,12 @@
           field,
           key,
           value:
-            existing?.value ||
+            existing
+              ?.value ||
             clean,
           createdAt:
-            existing?.createdAt ||
+            existing
+              ?.createdAt ||
             Date.now(),
           lastUsedAt:
             Date.now()
@@ -1092,7 +1680,9 @@
       const m
       of movements
     ) {
-      await rememberMovement(m);
+      await rememberMovement(
+        m
+      );
     }
 
     smartMemory =
@@ -1106,19 +1696,27 @@
   ) {
     if (
       !id ||
-      id !== editingMovementId
+      id !==
+        editingMovementId
     ) {
       return;
     }
 
     const existing =
       movements.find(
-        x => x.id === id
+        x =>
+          x.id === id
       );
 
-    if (!existing) return;
+    if (!existing) {
+      return;
+    }
 
-    if (!canEditRecord(existing)) {
+    if (
+      !canEditRecord(
+        existing
+      )
+    ) {
       return toast(
         'No tiene permiso para editar este registro'
       );
@@ -1137,17 +1735,21 @@
     }
 
     try {
-      if (cloudActive()) {
+      if (
+        cloudActive()
+      ) {
         await cloud()
           .updateMovement(
             movement
           );
+
       } else {
         await put(
           'movements',
           movement
         );
       }
+
     } catch (err) {
       return toast(
         err.message ||
@@ -1196,7 +1798,8 @@
         x =>
           x.businessId ===
             activeBusinessId &&
-          x.field === field
+          x.field ===
+            field
       )
       .forEach(x => {
         if (
@@ -1209,24 +1812,27 @@
         }
       });
 
-    return [...map.values()]
-      .sort(
-        (a, b) =>
-          a.localeCompare(
-            b,
-            'es',
-            {
-              sensitivity:
-                'base'
-            }
-          )
-      );
+    return [
+      ...map.values()
+    ].sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+          'es',
+          {
+            sensitivity:
+              'base'
+          }
+        )
+    );
   }
 
   function smartLabel(field) {
-    return field === 'category'
+    return field ===
+      'category'
       ? 'Categorías guardadas'
-      : field === 'concept'
+      : field ===
+          'concept'
         ? 'Productos / conceptos guardados'
         : 'Proveedores / clientes guardados';
   }
@@ -1236,10 +1842,13 @@
   function closeSmart() {
     if (smartMenu) {
       smartMenu.remove();
-      smartMenu = null;
+
+      smartMenu =
+        null;
     }
 
-    smartField = null;
+    smartField =
+      null;
   }
 
   function renderInlineSmart() {
@@ -1269,7 +1878,9 @@
           v =>
             !q ||
             v
-              .toLocaleLowerCase('es')
+              .toLocaleLowerCase(
+                'es'
+              )
               .includes(q)
         );
 
@@ -1303,11 +1914,12 @@
       </small>
     `;
 
-    smartMenu.appendChild(
-      head
-    );
+    smartMenu
+      .appendChild(head);
 
-    if (!values.length) {
+    if (
+      !values.length
+    ) {
       const empty =
         document.createElement(
           'div'
@@ -1321,9 +1933,10 @@
           ? 'No hay coincidencias. Puede escribir un nombre nuevo y se guardará al registrar.'
           : 'Todavía no hay nombres guardados en este campo para este negocio.';
 
-      smartMenu.appendChild(
-        empty
-      );
+      smartMenu
+        .appendChild(
+          empty
+        );
 
       return;
     }
@@ -1349,13 +1962,15 @@
 
       b.addEventListener(
         'pointerdown',
-        e => e.preventDefault()
+        e =>
+          e.preventDefault()
       );
 
       b.addEventListener(
         'click',
         () => {
-          input.value = v;
+          input.value =
+            v;
 
           closeSmart();
 
@@ -1365,12 +1980,15 @@
         }
       );
 
-      smartMenu.appendChild(b);
+      smartMenu
+        .appendChild(b);
     });
   }
 
   function openSmart(field) {
-    if (!activeBusinessId) {
+    if (
+      !activeBusinessId
+    ) {
       return toast(
         'Seleccione un negocio'
       );
@@ -1378,7 +1996,8 @@
 
     if (
       smartMenu &&
-      smartField === field
+      smartField ===
+        field
     ) {
       closeSmart();
       return;
@@ -1397,7 +2016,9 @@
         '.smart-control'
       );
 
-    if (!control) return;
+    if (!control) {
+      return;
+    }
 
     const beforeY =
       window.scrollY;
@@ -1471,7 +2092,10 @@
     .addEventListener(
       'click',
       () => {
-        cancelEditing(true);
+        cancelEditing(
+          true
+        );
+
         render();
       }
     );
@@ -1510,7 +2134,8 @@
           () => {
             if (
               smartMenu &&
-              smartField === id
+              smartField ===
+                id
             ) {
               renderInlineSmart();
             }
@@ -1564,12 +2189,14 @@
 
         const name =
           normalize(
-            $('businessName').value
+            $('businessName')
+              .value
           );
 
         const type =
           normalize(
-            $('businessType').value
+            $('businessType')
+              .value
           );
 
         if (
@@ -1582,7 +2209,9 @@
         let b;
 
         try {
-          if (cloudActive()) {
+          if (
+            cloudActive()
+          ) {
             if (
               !cloud()
                 .canCreateBusiness()
@@ -1599,7 +2228,8 @@
                   type,
                   description:
                     normalize(
-                      $('businessDescription').value
+                      $('businessDescription')
+                        .value
                     )
                 });
 
@@ -1610,7 +2240,8 @@
               type,
               description:
                 normalize(
-                  $('businessDescription').value
+                  $('businessDescription')
+                    .value
                 ),
               createdAt:
                 Date.now()
@@ -1652,13 +2283,17 @@
       async e => {
         e.preventDefault();
 
-        if (!activeBusinessId) {
+        if (
+          !activeBusinessId
+        ) {
           return toast(
             'Seleccione un negocio'
           );
         }
 
-        if (editingMovementId) {
+        if (
+          editingMovementId
+        ) {
           return saveEditedMovement(
             editingMovementId
           );
@@ -1671,15 +2306,20 @@
           movementFromForm();
 
         if (error) {
-          return toast(error);
+          return toast(
+            error
+          );
         }
 
         try {
-          if (cloudActive()) {
+          if (
+            cloudActive()
+          ) {
             await cloud()
               .createMovement(
                 movement
               );
+
           } else {
             await put(
               'movements',
@@ -1708,10 +2348,13 @@
       }
     );
 
-  async function deleteMovement(id) {
+  async function deleteMovement(
+    id
+  ) {
     const m =
       movements.find(
-        x => x.id === id
+        x =>
+          x.id === id
       );
 
     if (!m) return;
@@ -1737,9 +2380,14 @@
     }
 
     try {
-      if (cloudActive()) {
+      if (
+        cloudActive()
+      ) {
         await cloud()
-          .deleteMovement(id);
+          .deleteMovement(
+            id
+          );
+
       } else {
         await remove(
           'movements',
@@ -1755,9 +2403,12 @@
     }
 
     if (
-      editingMovementId === id
+      editingMovementId ===
+      id
     ) {
-      cancelEditing(false);
+      cancelEditing(
+        false
+      );
     }
 
     await refresh();
@@ -1799,7 +2450,9 @@
         }
 
         try {
-          if (cloudActive()) {
+          if (
+            cloudActive()
+          ) {
             await cloud()
               .deleteBusiness(
                 b.id
@@ -1848,7 +2501,9 @@
         activeBusinessId =
           null;
 
-        cancelEditing(false);
+        cancelEditing(
+          false
+        );
 
         await refresh();
 
@@ -1862,14 +2517,20 @@
      EXCEL
      ========================================================= */
 
-  function reportPeriod(list) {
-    if (!list.length) {
+  function reportPeriod(
+    list
+  ) {
+    if (
+      !list.length
+    ) {
       return 'Sin movimientos registrados';
     }
 
     const dates =
       list
-        .map(m => m.date)
+        .map(
+          m => m.date
+        )
         .filter(Boolean)
         .sort();
 
@@ -1884,12 +2545,17 @@
   }
 
   function safeName(name) {
-    return normalize(name)
+    return normalize(
+      name
+    )
       .replace(
         /[^a-z0-9áéíóúñ_-]+/gi,
         '_'
       )
-      .slice(0, 40) ||
+      .slice(
+        0,
+        40
+      ) ||
       'negocio';
   }
 
@@ -1987,13 +2653,17 @@
 
           img.onerror =
             () =>
-              resolve(null);
+              resolve(
+                null
+              );
 
           img.src =
             src;
 
         } catch (_) {
-          resolve(null);
+          resolve(
+            null
+          );
         }
       }
     );
@@ -2027,7 +2697,9 @@
     const c =
       calc(list);
 
-    if (!window.ExcelJS) {
+    if (
+      !window.ExcelJS
+    ) {
       return exportXlsxFallback(
         b,
         list,
@@ -2161,8 +2833,11 @@
       ws.pageSetup.pageOrder =
         'downThenOver';
 
-      let logoId = null;
-      let watermarkId = null;
+      let logoId =
+        null;
+
+      let watermarkId =
+        null;
 
       try {
         const src =
@@ -2204,7 +2879,9 @@
       );
 
       const title =
-        ws.getCell('A1');
+        ws.getCell(
+          'A1'
+        );
 
       title.value =
         'MULTIGESTIÓN MR';
@@ -2240,10 +2917,13 @@
       );
 
       const name =
-        ws.getCell('A2');
+        ws.getCell(
+          'A2'
+        );
 
       name.value =
-        b.name.toUpperCase();
+        b.name
+          .toUpperCase();
 
       name.font = {
         bold: true,
@@ -2268,12 +2948,15 @@
       );
 
       const activity =
-        ws.getCell('A3');
+        ws.getCell(
+          'A3'
+        );
 
       activity.value =
         `${String(b.type || '').toUpperCase()}${
           b.description
-            ? ' · ' + b.description
+            ? ' · ' +
+              b.description
             : ''
         }`;
 
@@ -2296,10 +2979,14 @@
         'A4:F4'
       );
 
-      ws.getCell('A4').value =
+      ws.getCell(
+        'A4'
+      ).value =
         `PERÍODO: ${reportPeriod(list)}`;
 
-      ws.getCell('A4').font = {
+      ws.getCell(
+        'A4'
+      ).font = {
         bold: true,
         color: {
           argb: navy
@@ -2310,17 +2997,23 @@
         'G4:I4'
       );
 
-      ws.getCell('G4').value =
+      ws.getCell(
+        'G4'
+      ).value =
         `EMISIÓN: ${new Date().toLocaleDateString('es-SV')}`;
 
-      ws.getCell('G4').font = {
+      ws.getCell(
+        'G4'
+      ).font = {
         bold: true,
         color: {
           argb: navy
         }
       };
 
-      ws.getCell('G4').alignment = {
+      ws.getCell(
+        'G4'
+      ).alignment = {
         horizontal:
           'right'
       };
@@ -2329,10 +3022,14 @@
         'A5:I5'
       );
 
-      ws.getCell('A5').value =
+      ws.getCell(
+        'A5'
+      ).value =
         'REGISTRO DE MOVIMIENTOS · ARCHIVO XLSX EDITABLE';
 
-      ws.getCell('A5').font = {
+      ws.getCell(
+        'A5'
+      ).font = {
         bold: true,
         size: 10,
         color: {
@@ -2340,12 +3037,16 @@
         }
       };
 
-      ws.getCell('A5').alignment = {
+      ws.getCell(
+        'A5'
+      ).alignment = {
         horizontal:
           'center'
       };
 
-      if (logoId !== null) {
+      if (
+        logoId !== null
+      ) {
         ws.addImage(
           logoId,
           {
@@ -2434,8 +3135,12 @@
             m.concept,
             m.quantity,
             m.unit,
-            Number(m.total || 0),
-            m.paymentMethod || ''
+            Number(
+              m.total ||
+              0
+            ),
+            m.paymentMethod ||
+              ''
           ];
 
           row.height =
@@ -2454,7 +3159,8 @@
               };
 
               if (
-                i % 2 === 1
+                i % 2 ===
+                1
               ) {
                 cell.fill = {
                   type:
@@ -2469,52 +3175,68 @@
             }
           );
 
-          row.getCell(1).alignment = {
+          row.getCell(
+            1
+          ).alignment = {
             horizontal:
               'center',
             vertical:
               'middle'
           };
 
-          row.getCell(2).alignment = {
+          row.getCell(
+            2
+          ).alignment = {
             horizontal:
               'center',
             vertical:
               'middle'
           };
 
-          row.getCell(3).alignment = {
+          row.getCell(
+            3
+          ).alignment = {
             horizontal:
               'center',
             vertical:
               'middle'
           };
 
-          row.getCell(6).alignment = {
+          row.getCell(
+            6
+          ).alignment = {
             horizontal:
               'center',
             vertical:
               'middle'
           };
 
-          row.getCell(7).alignment = {
+          row.getCell(
+            7
+          ).alignment = {
             horizontal:
               'center',
             vertical:
               'middle'
           };
 
-          row.getCell(8).numFmt =
+          row.getCell(
+            8
+          ).numFmt =
             currencyFmt;
 
-          row.getCell(8).font = {
+          row.getCell(
+            8
+          ).font = {
             bold: true,
             color: {
               argb: ink
             }
           };
 
-          row.getCell(8).fill = {
+          row.getCell(
+            8
+          ).fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: {
@@ -2522,7 +3244,9 @@
             }
           };
 
-          row.getCell(9).fill = {
+          row.getCell(
+            9
+          ).fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: {
@@ -2530,8 +3254,12 @@
             }
           };
 
-          if (isExpense(m)) {
-            row.getCell(3).fill = {
+          if (
+            isExpense(m)
+          ) {
+            row.getCell(
+              3
+            ).fill = {
               type: 'pattern',
               pattern: 'solid',
               fgColor: {
@@ -2539,7 +3267,9 @@
               }
             };
 
-            row.getCell(3).font = {
+            row.getCell(
+              3
+            ).font = {
               bold: true,
               color: {
                 argb: red
@@ -2549,7 +3279,9 @@
           } else if (
             isIncome(m)
           ) {
-            row.getCell(3).fill = {
+            row.getCell(
+              3
+            ).fill = {
               type: 'pattern',
               pattern: 'solid',
               fgColor: {
@@ -2557,7 +3289,9 @@
               }
             };
 
-            row.getCell(3).font = {
+            row.getCell(
+              3
+            ).font = {
               bold: true,
               color: {
                 argb: green
@@ -2567,13 +3301,17 @@
         }
       );
 
-      if (!list.length) {
+      if (
+        !list.length
+      ) {
         ws.mergeCells(
           'A7:I10'
         );
 
         const empty =
-          ws.getCell('A7');
+          ws.getCell(
+            'A7'
+          );
 
         empty.value =
           'SIN MOVIMIENTOS REGISTRADOS PARA ESTE NEGOCIO';
@@ -2608,10 +3346,13 @@
       const lastData =
         Math.max(
           7,
-          6 + list.length
+          6 +
+            list.length
         );
 
-      if (list.length) {
+      if (
+        list.length
+      ) {
         ws.autoFilter = {
           from: 'A6',
           to:
@@ -2623,19 +3364,25 @@
         rowNo + 1;
 
       const watermarkEnd =
-        watermarkStart + 8;
+        watermarkStart +
+        8;
 
       for (
-        let r = watermarkStart;
-        r <= watermarkEnd;
+        let r =
+          watermarkStart;
+        r <=
+          watermarkEnd;
         r++
       ) {
-        ws.getRow(r).height =
+        ws.getRow(
+          r
+        ).height =
           25;
       }
 
       if (
-        watermarkId !== null
+        watermarkId !==
+        null
       ) {
         ws.addImage(
           watermarkId,
@@ -2801,11 +3548,14 @@
         `A1:I${totalStart + 4}`;
 
       const buffer =
-        await wb.xlsx.writeBuffer();
+        await wb.xlsx
+          .writeBuffer();
 
       const blob =
         new Blob(
-          [buffer],
+          [
+            buffer
+          ],
           {
             type:
               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -2828,9 +3578,8 @@
       a.download =
         `MG_MR_${safeName(b.name)}.xlsx`;
 
-      document.body.appendChild(
-        a
-      );
+      document.body
+        .appendChild(a);
 
       a.click();
       a.remove();
@@ -2848,7 +3597,9 @@
       );
 
     } catch (err) {
-      console.error(err);
+      console.error(
+        err
+      );
 
       exportXlsxFallback(
         b,
@@ -2863,17 +3614,31 @@
     list,
     c
   ) {
-    if (!window.XLSX) {
+    if (
+      !window.XLSX
+    ) {
       return toast(
         'No se pudo cargar el generador de Excel'
       );
     }
 
     const rows = [
-      ['MULTIGESTIÓN MR'],
-      [b.name.toUpperCase()],
-      [String(b.type || '').toUpperCase()],
-      [`PERÍODO: ${reportPeriod(list)}`],
+      [
+        'MULTIGESTIÓN MR'
+      ],
+      [
+        b.name
+          .toUpperCase()
+      ],
+      [
+        String(
+          b.type ||
+          ''
+        ).toUpperCase()
+      ],
+      [
+        `PERÍODO: ${reportPeriod(list)}`
+      ],
       [],
       [
         'N.º',
@@ -2898,8 +3663,12 @@
           m.concept,
           m.quantity,
           m.unit,
-          Number(m.total || 0),
-          m.paymentMethod || ''
+          Number(
+            m.total ||
+            0
+          ),
+          m.paymentMethod ||
+            ''
         ])
     );
 
@@ -2916,12 +3685,14 @@
     );
 
     const wb =
-      XLSX.utils.book_new();
+      XLSX.utils
+        .book_new();
 
     const ws =
-      XLSX.utils.aoa_to_sheet(
-        rows
-      );
+      XLSX.utils
+        .aoa_to_sheet(
+          rows
+        );
 
     ws['!cols'] = [
       { wch: 7 },
@@ -2994,7 +3765,7 @@
       await navigator
         .serviceWorker
         .register(
-          './sw.js?v=134',
+          './sw.js?v=135',
           {
             updateViaCache:
               'none'
@@ -3011,7 +3782,7 @@
 
   /* =========================================================
      NUBE / AUTENTICACIÓN / ACCESOS
-     V1.3.4
+     V1.3.5
      ========================================================= */
 
   function cloudMessage(
@@ -3023,7 +3794,9 @@
       $(target);
 
     if (!box) {
-      return toast(message);
+      return toast(
+        message
+      );
     }
 
     box.textContent =
@@ -3042,7 +3815,9 @@
     const box =
       $(target);
 
-    if (!box) return;
+    if (!box) {
+      return;
+    }
 
     box.hidden =
       true;
@@ -3057,7 +3832,8 @@
   function openRecoveryDialog() {
     try {
       if (
-        $('authDialog')?.open
+        $('authDialog')
+          ?.open
       ) {
         $('authDialog')
           .close();
@@ -3066,7 +3842,9 @@
 
     try {
       if (
-        !$('resetPasswordDialog')?.open
+        !$(
+          'resetPasswordDialog'
+        )?.open
       ) {
         $('resetPasswordDialog')
           ?.showModal();
@@ -3116,9 +3894,11 @@
           await cloud()
             .signIn(
               normalize(
-                $('authEmail').value
+                $('authEmail')
+                  .value
               ),
-              $('authPassword').value
+              $('authPassword')
+                .value
             );
 
           cloudMessage(
@@ -3161,20 +3941,24 @@
 
         const email =
           normalize(
-            $('authEmail').value
+            $('authEmail')
+              .value
           );
 
         const password =
-          $('authPassword').value;
+          $('authPassword')
+            .value;
 
         const name =
           normalize(
-            $('authName').value
+            $('authName')
+              .value
           );
 
         if (
           !email ||
-          password.length < 6
+          password.length <
+            6
         ) {
           return cloudMessage(
             'Ingrese correo y una contraseña de al menos 6 caracteres.',
@@ -3196,7 +3980,9 @@
                 name
               );
 
-          if (data.session) {
+          if (
+            data.session
+          ) {
             cloudMessage(
               'Administrador creado y conectado.',
               'success'
@@ -3241,7 +4027,8 @@
 
         const email =
           normalize(
-            $('authEmail').value
+            $('authEmail')
+              .value
           );
 
         if (!email) {
@@ -3311,7 +4098,8 @@
           '';
 
         if (
-          password.length < 6
+          password.length <
+            6
         ) {
           return cloudMessage(
             'La contraseña debe tener al menos 6 caracteres.',
@@ -3407,6 +4195,65 @@
     );
 
   /* =========================================================
+     EVENTOS DEL BLOQUEO DE ACCESO
+     ========================================================= */
+
+  window.addEventListener(
+    'mg-access-gate-changed',
+    e => {
+      const mode =
+        e.detail?.mode;
+
+      const message =
+        e.detail?.message;
+
+      if (
+        mode ===
+        'pending'
+      ) {
+        showAccessValidating();
+        return;
+      }
+
+      if (
+        mode ===
+        'denied'
+      ) {
+        showAccessDenied(
+          message
+        );
+
+        return;
+      }
+
+      if (
+        mode ===
+          'granted' ||
+        mode ===
+          'none'
+      ) {
+        removeAccessGate();
+      }
+    }
+  );
+
+  window.addEventListener(
+    'mg-shared-link-error',
+    e => {
+      showAccessDenied(
+        e.detail?.message
+      );
+    }
+  );
+
+  window.addEventListener(
+    'mg-shared-link-redeemed',
+    () => {
+      removeAccessGate();
+    }
+  );
+
+  /* =========================================================
      GENERAR INVITACIÓN
      ========================================================= */
 
@@ -3456,7 +4303,8 @@
       'click',
       async () => {
         const value =
-          $('generatedAccessLink').value;
+          $('generatedAccessLink')
+            .value;
 
         if (!value) return;
 
@@ -3534,10 +4382,6 @@
       box.innerHTML =
         '';
 
-      /* -------------------------
-         COLABORADORES
-         ------------------------- */
-
       const membersTitle =
         document.createElement(
           'div'
@@ -3553,7 +4397,9 @@
         membersTitle
       );
 
-      if (!members.length) {
+      if (
+        !members.length
+      ) {
         const emptyMembers =
           document.createElement(
             'div'
@@ -3711,10 +4557,6 @@
         }
       );
 
-      /* -------------------------
-         ENLACES DE INVITACIÓN
-         ------------------------- */
-
       const linksTitle =
         document.createElement(
           'div'
@@ -3782,11 +4624,7 @@
               </strong>
 
               <div class="permission-note">
-                ${new Date(
-                  link.created_at
-                ).toLocaleString(
-                  'es-SV'
-                )}
+                ${new Date(link.created_at).toLocaleString('es-SV')}
                 · usos ${used}
                 · ${status}
               </div>
@@ -3847,7 +4685,9 @@
       );
 
     } catch (err) {
-      console.error(err);
+      console.error(
+        err
+      );
 
       box.innerHTML = `
         <small class="muted-text">
@@ -3943,6 +4783,32 @@
   window.addEventListener(
     'mg-auth-changed',
     async () => {
+      /*
+        Nunca refrescar la aplicación
+        si el enlace fue rechazado.
+      */
+      if (
+        cloudAccessDenied()
+      ) {
+        const gate =
+          cloud()
+            ?.getAccessGate?.();
+
+        showAccessDenied(
+          gate?.message
+        );
+
+        return;
+      }
+
+      if (
+        cloudAccessPending()
+      ) {
+        showAccessValidating();
+
+        return;
+      }
+
       activeBusinessId =
         null;
 
@@ -3957,20 +4823,35 @@
   const originalRender =
     render;
 
-  render = function () {
-    originalRender();
+  render =
+    function () {
+      if (
+        cloudAccessDenied()
+      ) {
+        const gate =
+          cloud()
+            ?.getAccessGate?.();
 
-    if (
-      cloudActive() &&
-      activeBusinessId &&
-      cloud()
-        .canAdminBusiness(
-          activeBusinessId
-        )
-    ) {
-      renderAccessLinks();
-    }
-  };
+        showAccessDenied(
+          gate?.message
+        );
+
+        return;
+      }
+
+      originalRender();
+
+      if (
+        cloudActive() &&
+        activeBusinessId &&
+        cloud()
+          .canAdminBusiness(
+            activeBusinessId
+          )
+      ) {
+        renderAccessLinks();
+      }
+    };
 
   /* =========================================================
      INICIO
@@ -3978,6 +4859,13 @@
 
   (async () => {
     try {
+      /*
+        Si viene un enlace privado,
+        la pantalla ya está bloqueada
+        desde la parte superior del
+        archivo.
+      */
+
       db =
         await openDB();
 
@@ -3999,8 +4887,37 @@
       await migrateMemory();
 
       if (cloud()) {
-        await cloud()
-          .init();
+        try {
+          await cloud()
+            .init();
+
+        } catch (err) {
+          /*
+            Caso especial:
+            enlace privado inválido,
+            usado, vencido o revocado.
+            NO continuar iniciando
+            la plataforma.
+          */
+          if (
+            cloudAccessDenied()
+          ) {
+            const gate =
+              cloud()
+                ?.getAccessGate?.();
+
+            showAccessDenied(
+              gate?.message ||
+              err.message
+            );
+
+            registerFreshWorker();
+
+            return;
+          }
+
+          throw err;
+        }
 
         if (
           cloud()
@@ -4009,6 +4926,43 @@
         ) {
           openRecoveryDialog();
         }
+
+        /*
+          Si el enlace fue válido,
+          ya puede mostrarse la
+          herramienta.
+        */
+        if (
+          cloud()
+            .state
+            ?.accessGate
+            ?.mode ===
+          'granted'
+        ) {
+          removeAccessGate();
+        }
+      }
+
+      /*
+        Doble seguridad:
+        antes de refrescar revisamos
+        nuevamente que el acceso no
+        esté bloqueado.
+      */
+      if (
+        cloudAccessDenied()
+      ) {
+        const gate =
+          cloud()
+            ?.getAccessGate?.();
+
+        showAccessDenied(
+          gate?.message
+        );
+
+        registerFreshWorker();
+
+        return;
       }
 
       await refresh();
@@ -4019,6 +4973,38 @@
       console.error(
         err
       );
+
+      if (
+        cloudAccessDenied()
+      ) {
+        const gate =
+          cloud()
+            ?.getAccessGate?.();
+
+        showAccessDenied(
+          gate?.message ||
+          err.message
+        );
+
+        return;
+      }
+
+      /*
+        Si todavía existe ?access=
+        y algo salió mal durante
+        la validación, tampoco
+        enseñamos la plataforma.
+      */
+      if (
+        pageHasAccessToken()
+      ) {
+        showAccessDenied(
+          err.message ||
+          'No fue posible validar este acceso. Solicite un nuevo enlace al administrador.'
+        );
+
+        return;
+      }
 
       toast(
         err.message ||
