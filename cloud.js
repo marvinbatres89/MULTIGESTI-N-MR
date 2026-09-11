@@ -1213,7 +1213,69 @@
       throw error;
     }
   }
+async function revokeBusinessMember(businessId, userId) {
+  if (!state.user) {
+    throw new Error('Inicie sesión');
+  }
 
+  if (!canAdminBusiness(businessId)) {
+    throw new Error('Solo el administrador puede revocar colaboradores.');
+  }
+
+  const { data, error } = await client.rpc(
+    'revoke_business_member',
+    {
+      p_business_id: businessId,
+      p_user_id: userId
+    }
+  );
+
+  if (error) throw error;
+
+  const member = state.members.find(
+    m =>
+      m.business_id === businessId &&
+      m.user_id === userId
+  );
+
+  if (member) {
+    member.active = false;
+  }
+
+  return data;
+}
+
+async function reactivateBusinessMember(businessId, userId) {
+  if (!state.user) {
+    throw new Error('Inicie sesión');
+  }
+
+  if (!canAdminBusiness(businessId)) {
+    throw new Error('Solo el administrador puede reactivar colaboradores.');
+  }
+
+  const { data, error } = await client.rpc(
+    'reactivate_business_member',
+    {
+      p_business_id: businessId,
+      p_user_id: userId
+    }
+  );
+
+  if (error) throw error;
+
+  const member = state.members.find(
+    m =>
+      m.business_id === businessId &&
+      m.user_id === userId
+  );
+
+  if (member) {
+    member.active = true;
+  }
+
+  return data;
+}
   async function migrateLocal(
     localBusinesses,
     localMovements
@@ -1301,6 +1363,8 @@
     generateAccessLink,
     listAccessLinks,
     revokeAccessLink,
+    revokeBusinessMember,
+reactivateBusinessMember,
 
     migrateLocal,
 
