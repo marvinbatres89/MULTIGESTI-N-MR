@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.3.5';
+  const APP_VERSION = '1.4.0';
   const DB_NAME = 'multigestion_mr_v1';
   const DB_VERSION = 2;
 
@@ -10,7 +10,11 @@
   let db;
   let businesses = [];
   let movements = [];
+  let tasks = [];
   let smartMemory = [];
+
+  let editingTaskId = null;
+  let agendaMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
   let activeBusinessId = null;
   let editingMovementId = null;
@@ -744,6 +748,9 @@
         movements =
           remote.movements;
 
+        tasks =
+          remote.tasks || [];
+
       } catch (err) {
         console.error(err);
 
@@ -783,6 +790,8 @@
           await getAll(
             'movements'
           );
+
+        tasks = [];
       }
 
     } else {
@@ -795,6 +804,8 @@
         await getAll(
           'movements'
         );
+
+      tasks = [];
     }
 
     businesses.sort(
@@ -4701,6 +4712,264 @@
   }
 
   /* =========================================================
+     AGENDA / PLAN DE LABORES
+     V1.4.0
+     ========================================================= */
+
+  function businessTasks(id = activeBusinessId) {
+    return id
+      ? tasks.filter(t => t.businessId === id)
+      : [];
+  }
+
+  function addDaysToDate(dateText, days) {
+    if (!dateText) return '';
+    const d = new Date(`${dateText}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return '';
+    d.setDate(d.getDate() + Number(days || 0));
+    return d.toISOString().slice(0, 10);
+  }
+
+  function todayText() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function formatTaskDate(value) {
+    if (!value) return '—';
+    const d = new Date(`${value}T12:00:00`);
+    return Number.isNaN(d.getTime())
+      ? value
+      : new Intl.DateTimeFormat('es-SV', {
+          day: '2-digit', month: '2-digit', year: 'numeric'
+        }).format(d);
+  }
+
+  function taskStatus(task) {
+    if (task.status === 'completed') return 'completed';
+    if (task.scheduledDate && task.scheduledDate < todayText()) return 'overdue';
+    return 'pending';
+  }
+
+  function statusLabel(status) {
+    return status === 'completed'
+      ? 'Realizada'
+      : status === 'overdue'
+        ? 'Vencida'
+        : 'Pendiente';
+  }
+
+  function priorityLabel(priority) {
+    return priority === 'high'
+      ? 'Alta'
+      : priority === 'low'
+        ? 'Baja'
+        : 'Normal';
+  }
+
+  function closeTaskDialog() {
+    editingTaskId = null;
+    $('taskForm')?.reset();
+    if ($('taskDialogTitle')) $('taskDialogTitle').textContent = 'Nueva tarea';
+    $('taskDialog')?.close();
+  }
+
+  function openTaskDialog(task = null) {
+    if (!activeBusinessId) return toast('Seleccione un negocio');
+    if (!cloudActive()) return toast('La Agenda V1.4.0 necesita conexión a la nube');
+
+    editingTaskId = task?.id || null;
+    $('taskDialogTitle').textContent = task ? 'Editar tarea' : 'Nueva tarea';
+    $('taskTitle').value = task?.title || '';
+    $('taskType').value = task?.taskType || '';
+    $('taskDescription').value = task?.description || '';
+    $('taskReferenceDate').value = task?.referenceDate || $('agendaReferenceDate')?.value || '';
+    $('taskRelativeDay').value = task?.relativeDay ?? '';
+    $('taskScheduledDate').value = task?.scheduledDate || '';
+    $('taskStatus').value = task?.status === 'completed' ? 'completed' : 'pending';
+    $('taskPriority').value = task?.priority || 'normal';
+    $('taskRecurrenceDays').value = task?.recurrenceDays ?? '';
+    $('taskDialog').showModal();
+  }
+
+  function syncTaskScheduledDate() {
+    const base = $('taskReferenceDate')?.value;
+    const relative = $('taskRelativeDay')?.value;
+    if (base && relative !== '') {
+      $('taskScheduledDate').value = addDaysToDate(base, relative);
+    }
+  }
+
+  function renderAgendaCalendar(list) {
+    const grid = $('agendaCalendarGrid');
+    if (!grid) return;
+
+    const year = agendaMonth.getFullYear();
+    const month = agendaMonth.getMonth();
+    $('agendaCalendarTitle').textContent = new Intl.DateTimeFormat('es-SV', {
+      month: 'long', year: 'numeric'
+    }).format(agendaMonth);
+
+    const first = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const start = first.getDay();
+    const names = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    grid.innerHTML = names.map(n => `<div class="agenda-weekday">${n}</div>`).join('');
+
+    for (let i = 0; i < start; i += 1) {
+      grid.insertAdjacentHTML('beforeend', '<div class="agenda-day is-empty"></div>');
+    }
+
+    for (let day = 1; day <= lastDay; day += 1) {
+      const date = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dayTasks = list.filter(t => t.scheduledDate === date);
+      const stateClass = dayTasks.some(t => taskStatus(t) === 'overdue')
+        ? ' has-overdue'
+        : dayTasks.some(t => taskStatus(t) === 'pending')
+          ? ' has-pending'
+          : dayTasks.length ? ' has-completed' : '';
+      const title = dayTasks.map(t => t.title).join(' · ');
+      grid.insertAdjacentHTML('beforeend', `<div class="agenda-day${stateClass}" title="${escapeHtml(title)}"><strong>${day}</strong>${dayTasks.length ? `<small>${dayTasks.length}</small>` : ''}</div>`);
+    }
+  }
+
+  function renderAgenda() {
+    const panel = $('agendaPanel');
+    if (!panel) return;
+
+    const active = businesses.find(b => b.id === activeBusinessId);
+    panel.hidden = !active;
+    if (!active) return;
+
+    $('agendaBusinessName').textContent = active.name;
+    const list = businessTasks(active.id).slice().sort((a,b) => String(a.scheduledDate).localeCompare(String(b.scheduledDate)));
+    const completed = list.filter(t => taskStatus(t) === 'completed').length;
+    const overdue = list.filter(t => taskStatus(t) === 'overdue').length;
+    const pending = list.filter(t => taskStatus(t) === 'pending').length;
+    const upcoming = list.filter(t => taskStatus(t) === 'pending' && t.scheduledDate >= todayText());
+
+    $('agendaTotal').textContent = list.length;
+    $('agendaCompleted').textContent = completed;
+    $('agendaPending').textContent = pending;
+    $('agendaOverdue').textContent = overdue;
+    $('agendaNextTask').textContent = upcoming[0]
+      ? `${upcoming[0].title} · ${formatTaskDate(upcoming[0].scheduledDate)}`
+      : '—';
+
+    const reference = list.find(t => t.referenceDate)?.referenceDate || '';
+    if ($('agendaReferenceDate') && document.activeElement !== $('agendaReferenceDate')) {
+      $('agendaReferenceDate').value = reference;
+    }
+
+    const rows = $('agendaTaskRows');
+    rows.innerHTML = '';
+    $('emptyAgendaTasks').hidden = list.length > 0;
+
+    list.forEach((task, index) => {
+      const tr = document.createElement('tr');
+      const status = taskStatus(task);
+      const canDelete = cloud()?.canDeleteTask?.(task.businessId);
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${escapeHtml(formatTaskDate(task.scheduledDate))}</td>
+        <td>${task.relativeDay == null ? '—' : `Día ${escapeHtml(String(task.relativeDay))}`}</td>
+        <td><strong>${escapeHtml(task.title)}</strong>${task.description ? `<small class="muted-text">${escapeHtml(task.description)}</small>` : ''}</td>
+        <td>${escapeHtml(task.taskType || '—')}</td>
+        <td><span class="task-status ${status}">${statusLabel(status)}</span></td>
+        <td><span class="task-priority ${escapeHtml(task.priority || 'normal')}">${priorityLabel(task.priority)}</span></td>
+        <td><div class="row-actions"><button class="btn ghost edit-task" type="button">Editar</button>${canDelete ? '<button class="btn danger delete-task" type="button">Eliminar</button>' : ''}</div></td>`;
+      tr.querySelector('.edit-task')?.addEventListener('click', () => openTaskDialog(task));
+      tr.querySelector('.delete-task')?.addEventListener('click', async () => {
+        if (!confirm(`¿Eliminar la tarea “${task.title}”?`)) return;
+        try {
+          await cloud().deleteTask(task.id);
+          tasks = cloud().state.tasks || [];
+          renderAgenda();
+          toast('Tarea eliminada');
+        } catch (err) {
+          console.error(err);
+          toast(err.message || 'No se pudo eliminar la tarea');
+        }
+      });
+      rows.appendChild(tr);
+    });
+
+    const upcomingBox = $('agendaUpcomingList');
+    if (upcomingBox) {
+      upcomingBox.innerHTML = upcoming.slice(0, 5).map(t => `
+        <div class="agenda-upcoming-item"><strong>${escapeHtml(t.title)}</strong><small>${escapeHtml(formatTaskDate(t.scheduledDate))} · ${priorityLabel(t.priority)}</small></div>
+      `).join('') || '<small class="muted-text">No hay próximas actividades.</small>';
+    }
+
+    renderAgendaCalendar(list);
+  }
+
+  $('newTaskBtn')?.addEventListener('click', () => openTaskDialog());
+  $('closeTaskDialog')?.addEventListener('click', closeTaskDialog);
+  $('taskCancelBtn')?.addEventListener('click', closeTaskDialog);
+  $('taskReferenceDate')?.addEventListener('change', syncTaskScheduledDate);
+  $('taskRelativeDay')?.addEventListener('input', syncTaskScheduledDate);
+  $('agendaReferenceDate')?.addEventListener('change', () => {
+    if ($('taskReferenceDate')) $('taskReferenceDate').value = $('agendaReferenceDate').value;
+  });
+
+  $('agendaPrevMonth')?.addEventListener('click', () => {
+    agendaMonth = new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() - 1, 1);
+    renderAgenda();
+  });
+
+  $('agendaNextMonth')?.addEventListener('click', () => {
+    agendaMonth = new Date(agendaMonth.getFullYear(), agendaMonth.getMonth() + 1, 1);
+    renderAgenda();
+  });
+
+  $('agendaTemplatesBtn')?.addEventListener('click', () => {
+    toast('Plantillas agrícolas: siguiente etapa de V1.4.0');
+  });
+
+  $('agendaExportBtn')?.addEventListener('click', () => {
+    toast('Exportación de Agenda: siguiente etapa de V1.4.0');
+  });
+
+  $('taskForm')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!activeBusinessId) return toast('Seleccione un negocio');
+
+    const payload = {
+      id: editingTaskId || undefined,
+      businessId: activeBusinessId,
+      title: $('taskTitle').value.trim(),
+      taskType: $('taskType').value.trim(),
+      description: $('taskDescription').value.trim(),
+      referenceDate: $('taskReferenceDate').value || null,
+      relativeDay: $('taskRelativeDay').value === '' ? null : Number($('taskRelativeDay').value),
+      scheduledDate: $('taskScheduledDate').value,
+      status: $('taskStatus').value,
+      priority: $('taskPriority').value,
+      recurrenceDays: $('taskRecurrenceDays').value === '' ? null : Number($('taskRecurrenceDays').value)
+    };
+
+    try {
+      if (editingTaskId) {
+        await cloud().updateTask(payload);
+        toast('Tarea actualizada');
+      } else {
+        await cloud().createTask(payload);
+        toast('Tarea guardada');
+      }
+      tasks = cloud().state.tasks || [];
+      closeTaskDialog();
+      renderAgenda();
+    } catch (err) {
+      console.error(err);
+      toast(err.message || 'No se pudo guardar la tarea');
+    }
+  });
+
+  /* =========================================================
      MIGRACIÓN LOCAL
      ========================================================= */
 
@@ -4840,6 +5109,8 @@
       }
 
       originalRender();
+
+      renderAgenda();
 
       if (
         cloudActive() &&
