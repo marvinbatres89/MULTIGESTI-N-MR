@@ -1,11 +1,11 @@
-const CACHE='multigestion-mr-v1-4-0';
+const CACHE='multigestion-mr-v1-4-1';
 
 const CORE=[
-  './index.html?v=140',
-  './style.css?v=140',
-  './cloud.js?v=140',
-  './app.js?v=140',
-  './manifest.json?v=140'
+  './index.html?v=141',
+  './style.css?v=141',
+  './cloud.js?v=141',
+  './app.js?v=141',
+  './manifest.json?v=141'
 ];
 
 self.addEventListener('install',e=>{
@@ -55,7 +55,7 @@ self.addEventListener('fetch',e=>{
           .then(
             cached=>
               cached||
-              caches.match('./index.html?v=140')
+              caches.match('./index.html?v=141')
           )
       )
   );
