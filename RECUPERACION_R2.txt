@@ -1,0 +1,8 @@
+MULTIGESTIÓN MR - RECUPERACIÓN R2
+
+Corrección puntual de autenticación:
+- Supabase vuelve a usar sessionStorage para la sesión.
+- Nueva clave: mg-mr-auth-v141-r2.
+- Se renueva la caché del Service Worker a R2.
+- No modifica negocios, movimientos, Agenda ni datos de Supabase.
+- NO ejecutar SUPABASE_PATCH_V1.3.sql.

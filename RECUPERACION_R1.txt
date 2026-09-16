@@ -1,0 +1,12 @@
+MULTIGESTIÓN MR - RECUPERACIÓN R1
+
+Base: V1.4.1 completa.
+Objetivo: recuperar primero la sesión estable del administrador y la carga real desde Supabase.
+
+Cambios mínimos:
+1. La sesión Supabase persistente usa localStorage con una clave propia.
+2. Si existe sesión cloud y falla una consulta, NO se sustituyen los datos por IndexedDB local antiguo.
+3. Se cambia la versión de caché del Service Worker para evitar servir JS anterior.
+
+NO modifica la base de datos ni contiene SQL destructivo.
+No ejecutar SUPABASE_PATCH_V1.3.sql para esta prueba.
